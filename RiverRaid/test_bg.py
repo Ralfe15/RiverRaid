@@ -40,39 +40,53 @@ up_pressed = False
 down_pressed = False
 scroll_speed = 1
 
-#enemies
 enemies_img = pygame.image.load('images/choppa.png')
 bigger_enemies = pygame.transform.scale(enemies_img, (int(enemies_img.get_width()*2),int(enemies_img.get_height()*2)))
-enemies_x = [random.randint(160,515) for i in range(5)]
-enemies_y = [random.randint(0,300) for i in range(5)]
-enemies_coords = list(zip(enemies_x,enemies_y))
-enemies_direct = [random.choice([1,0, -1]) for i in range(5)]
 
-#enemies off the screen
-enemies_x_off = [random.randint(160,515) for i in range(5)]
-enemies_y_off = [random.randint(-300,0) for i in range(5)]
-enemies_coords_off = list(zip(enemies_x_off,enemies_y_off))
-enemies_direct_off = [random.choice([1,0, -1]) for i in range(5)]
+def generate_enemies():
+    enemies_x = [random.randint(160,515) for i in range(3)]
+    enemies_y = [random.randint(0,300) for i in range(3)]
+    enemies_coords = list(zip(enemies_x,enemies_y))
+    enemies_direct = [random.choice([1,0, -1]) for i in range(3)]
+    return enemies_x, enemies_y, enemies_coords, enemies_direct
 
 
+def draw_enemies():
+    for enemy in enemies_coords:
+        screen.blit(bigger_enemies, enemy)
+
+def generate_enemies_off():
+    enemies_x_off = [random.randint(160,515) for i in range(3)]
+    enemies_y_off = [random.randint(-300,0) for i in range(3)]
+    enemies_coords_off = list(zip(enemies_x_off,enemies_y_off))
+    enemies_direct_off = [random.choice([1,0, -1]) for i in range(3)]
+    return enemies_x_off, enemies_y_off,enemies_coords_off, enemies_direct_off
+
+def draw_enemies_off():
+    for enemy in enemies_coords_off:
+        screen.blit(bigger_enemies, enemy)
+
+enemies_x, enemies_y, enemies_coords, enemies_direct = generate_enemies()
+enemies_x_off, enemies_y_off, enemies_coords_off, enemies_direct_off = generate_enemies_off()
 
 def redrawWindow():
     if start:
         screen.blit(pygame.image.load('images/background.png').convert(), (0,bY))
         screen.blit(pygame.image.load('images/bckg-1.jpeg').convert(), (0,bY2))
+        draw_enemies()
+        draw_enemies_off()
     else:
         screen.blit(pygame.image.load('images/bckg-1.jpeg').convert(), (0,bY))
         screen.blit(pygame.image.load('images/bckg-1.jpeg').convert(), (0,bY2))
+        draw_enemies()
+        draw_enemies_off()
     if right:
-        screen.blit(bigger_plane_right,(plane_x, 3*(screen_height/4)-20))
+        screen.blit(bigger_plane_right,(plane_x, 420))
     elif left:
-        screen.blit(bigger_plane_left,(plane_x, 3*(screen_height/4)-20))
+        screen.blit(bigger_plane_left,(plane_x, 420))
     else:
-        screen.blit(bigger_plane, (plane_x, 3*(screen_height/4)-20))
-    for enemy in enemies_coords:
-        screen.blit(bigger_enemies, enemy)
-    for enemy_off in enemies_coords_off:
-        screen.blit(bigger_enemies, enemy_off)
+        screen.blit(bigger_plane, (plane_x, 420))
+
     pygame.display.update()
 
 
