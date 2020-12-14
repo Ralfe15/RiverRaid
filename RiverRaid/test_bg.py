@@ -3,24 +3,38 @@ import pygame, sys, random
 pygame.init()
 
 screen_height = 480
-
 screen_width = 704
 
 screen = pygame.display.set_mode((screen_width,screen_height))
 clock = pygame.time.Clock()
 
-#sprites and background
+#background
 bg_surface = pygame.image.load('images/background.png').convert()
 bY = 0
 bY2 = bg_surface.get_height()
+
+#images of the player
 plane = pygame.image.load('images/plane-still.png')
-bigger_plane = pygame.transform.scale(plane, (int(plane.get_width()*2),int(plane.get_height()*2)))
 plane_left = pygame.image.load('images/plane-left.png')
-bigger_plane_left = pygame.transform.scale(plane_left, (int(plane_left.get_width()*2),int(plane_left.get_height()*2)))
 plane_right = pygame.image.load('images/plane-right.png')
-bigger_plane_right = pygame.transform.scale(plane_right, (int(plane_right.get_width()*2),int(plane_right.get_height()*2)))
 
 fuel_bar = pygame.image.load('images/fuel_bar.png')
+
+#images of the enemies
+choppa_l1, choppa_l2 = pygame.image.load('images/choppa_l1.png'), pygame.image.load('images/choppa_l2.png')
+choppa_r1, choppa_r2 = pygame.image.load('images/choppa_r1.png'), pygame.image.load('images/choppa_r2.png')
+
+choppa_right = [choppa_r1, choppa_r2]
+choppa_left = [choppa_l1, choppa_l2]
+
+ship_left = pygame.image.load('images/ship_l.png')
+ship_right = pygame.image.load('images/ship_r.png')
+
+jet_left = pygame.image.load('images/jet_l.png')
+jet_right = pygame.image.load('images/jet_r.png')
+
+choices_left = ['jet_l.png','ship_l.png']
+choices_right = ['jet_r.png','ship_r.png']
 
 start = True
 
@@ -28,67 +42,65 @@ start = True
 width = plane.get_width()
 height = plane.get_height()
 vel = 5
-acel = 0
 left = False
 right = False
 
 #plane position in x axis , starti\ng at the middle of screen
-plane_x = screen_width/2 - width/2
+plane_x = 350 - (int(width/2))
 
 #camera scrolling
 up_pressed = False
 down_pressed = False
-scroll_speed = 1
+scroll_speed = 1.5
 
-enemies_img = pygame.image.load('images/choppa.png')
-bigger_enemies = pygame.transform.scale(enemies_img, (int(enemies_img.get_width()*2),int(enemies_img.get_height()*2)))
+#enemies
+def generate_enemies(number,off,max_x=0,min_x=0):
+    #returns a list of lists, each being an enemy with: [0] = list of x,y coords, [1] = direction, [2] = enemy type
+    enemies_list = []
+    for i in range(number):
+        tmp = []
+        if not off:
+            tmp.append([random.randint(145,405), random.randint(0,200)])
+        elif off:
+            tmp.append([random.randint(145,405), random.randint(-200,0)])
+        tmp.append(random.choice([1,0, -1]))
+        if tmp[1] == 1 or tmp[1] == 0:
+            tmp.append(random.choice(choices_right))
+        elif tmp[1] == -1:
+            tmp.append(random.choice(choices_left))
+        enemies_list.append(tmp)
+    return enemies_list 
 
-def generate_enemies():
-    enemies_x = [random.randint(160,515) for i in range(3)]
-    enemies_y = [random.randint(0,300) for i in range(3)]
-    enemies_coords = list(zip(enemies_x,enemies_y))
-    enemies_direct = [random.choice([1,0, -1]) for i in range(3)]
-    return enemies_x, enemies_y, enemies_coords, enemies_direct
-
-
-def draw_enemies():
-    for enemy in enemies_coords:
-        screen.blit(bigger_enemies, enemy)
-
-def generate_enemies_off():
-    enemies_x_off = [random.randint(160,515) for i in range(3)]
-    enemies_y_off = [random.randint(-300,0) for i in range(3)]
-    enemies_coords_off = list(zip(enemies_x_off,enemies_y_off))
-    enemies_direct_off = [random.choice([1,0, -1]) for i in range(3)]
-    return enemies_x_off, enemies_y_off,enemies_coords_off, enemies_direct_off
-
-def draw_enemies_off():
-    for enemy in enemies_coords_off:
-        screen.blit(bigger_enemies, enemy)
-
-enemies_x, enemies_y, enemies_coords, enemies_direct = generate_enemies()
-enemies_x_off, enemies_y_off, enemies_coords_off, enemies_direct_off = generate_enemies_off()
+def draw_enemies(enemies_list):
+    for enemy in enemies_list:
+        screen.blit(pygame.image.load('images/'+enemy[2]), enemy[0])
 
 def redrawWindow():
     if start:
         screen.blit(pygame.image.load('images/background.png').convert(), (0,bY))
         screen.blit(pygame.image.load('images/bckg-1.jpeg').convert(), (0,bY2))
-        draw_enemies()
-        draw_enemies_off()
     else:
         screen.blit(pygame.image.load('images/bckg-1.jpeg').convert(), (0,bY))
         screen.blit(pygame.image.load('images/bckg-1.jpeg').convert(), (0,bY2))
-        draw_enemies()
-        draw_enemies_off()
     if right:
-        screen.blit(bigger_plane_right,(plane_x, 420))
+        screen.blit(plane_right,(plane_x, 420))
     elif left:
-        screen.blit(bigger_plane_left,(plane_x, 420))
+        screen.blit(plane_left,(plane_x, 420))
     else:
-        screen.blit(bigger_plane, (plane_x, 420))
-
+        screen.blit(plane, (plane_x, 420))
+    draw_enemies(enemies_start)
+    draw_enemies(enemies_start_off)
+    move_enemies()
     pygame.display.update()
 
+
+def move_enemies():
+    for i in range(len(enemies_start)):
+        enemies_start[i][0][1] += scroll_speed
+        enemies_start[i][0][0] += enemies_start[i][1] *0.5
+    for i in range(len(enemies_start_off)):
+        enemies_start_off[i][0][1] += scroll_speed
+        enemies_start_off[i][0][0] += enemies_start_off[i][1] *0.5
 
 def checkScroll():
     global scroll_speed
@@ -102,6 +114,8 @@ def checkScroll():
         elif scroll_speed < 1.5:
             scroll_speed += 0.08       
 
+enemies_start = generate_enemies(3, False)
+enemies_start_off = generate_enemies(5, True)
 
 
 speed = 60
@@ -112,28 +126,21 @@ while True:
             pygame.quit()
             quit()
     redrawWindow()
-    checkScroll()
+    #checkScroll()
 
-    bY += scroll_speed #scrolling speed
+    bY += scroll_speed
     bY2 += scroll_speed
-    for i in range(len(enemies_y)):
-        enemies_y[i] += scroll_speed
-        enemies_y_off[i] += scroll_speed
-    for i in range(len(enemies_x)):
-        enemies_x_off[i] += enemies_direct_off[i]*0.5
-        enemies_x[i] += enemies_direct[i] *0.5
-        
-    enemies_coords = list(zip(enemies_x,enemies_y))
-    enemies_coords_off = list(zip(enemies_x_off,enemies_y_off))
-        
+    
+    #handle infinite scroll
     if bY > bg_surface.get_height():
         bY = -1*bg_surface.get_height()
         start = False
-        print("A")
         
     if bY2 > bg_surface.get_height():
         bY2 = -1*bg_surface.get_height()
-        print("B")
+
+
+
 
         
     keys = pygame.key.get_pressed()
@@ -156,4 +163,5 @@ while True:
     else:
         up_pressed = False
         down_pressed = False
+        
     clock.tick(speed)
