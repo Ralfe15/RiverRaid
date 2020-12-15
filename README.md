@@ -26,4 +26,4 @@ Foi o primeiro jogo a implementar o sistema de checkpoint.---*
 5. Disparar projéteis e checar colisões
 6. Barra de combustível
 
-- Atualizado a última vez em 14/12/2020
+- Atualizado a última vez em 15/12/2020
