@@ -45,8 +45,10 @@ vel = 5
 left = False
 right = False
 
-#plane position in x axis , starti\ng at the middle of screen
+#plane position in x axis , starting at the middle of screen
 plane_x = 350 - (int(width/2))
+
+player_hitbox = pygame.Rect(plane_x, 420, plane.get_width(),plane.get_height())
 
 #camera scrolling
 up_pressed = False
@@ -73,8 +75,14 @@ def generate_enemies(number,off,max_x=405,min_x=145):
     return enemies_list 
 
 def draw_enemies(enemies_list):
+    
     for enemy in enemies_list:
+        enemy_rect = [enemy[0][0],enemy[0][1],pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()]
+        pygame.draw.rect(screen,(255,0,0),enemy_rect,2)
+        if player_hitbox.colliderect(enemy_rect):
+            return True
         screen.blit(pygame.image.load('images/'+enemy[2]), enemy[0])
+
 
 
 
@@ -96,6 +104,7 @@ def redrawWindow():
     move_enemies()
     pygame.draw.line(screen,(255,0,0),(0, bY),(704,bY))
     pygame.draw.line(screen,(255,0,0),(0, bY2),(704,bY2))
+    pygame.draw.rect(screen,(255,0,0),player_hitbox,2)
     pygame.display.update()
 
 
@@ -119,6 +128,8 @@ def checkScroll():
         elif scroll_speed < 1.5:
             scroll_speed += 0.08       
 
+
+
 enemies_start = generate_enemies(3, False)
 enemies_start_off = generate_enemies(5, True)
 
@@ -131,7 +142,7 @@ while True:
             pygame.quit()
             quit()
     redrawWindow()
-    #checkScroll()
+    checkScroll()
 
     bY += scroll_speed
     bY2 += scroll_speed
@@ -146,7 +157,8 @@ while True:
         bY2 = -1*bg_surface.get_height()
         enemies_start_off = generate_enemies(5, True)
 
-
+    if draw_enemies(enemies_start) or  draw_enemies(enemies_start_off):
+        break
 
 
         
@@ -156,9 +168,14 @@ while True:
         right = False
     elif keys[pygame.K_LEFT]: #test value
         plane_x-=vel
+        player_hitbox.x -= vel
+
         left = True    
     elif keys[pygame.K_RIGHT]: #test value
         plane_x+=vel
+        player_hitbox.x +=vel
+
+        
         right = True
     else:
         left = False
