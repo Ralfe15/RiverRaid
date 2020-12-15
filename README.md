@@ -20,9 +20,10 @@ Foi o primeiro jogo a implementar o sistema de checkpoint.---*
 
 1. ~~Movimentação básica~~
 2. ~~Cenário~~
+3. ~~Criar hitbox do jogador e dos inimigos~~
 3. Gerar inimigos de acordo com as dimensões do cenário
 4. Gerar galões de combustível
 5. Disparar projéteis e checar colisões
 6. Barra de combustível
 
-- Atualizado a última vez em 14/12/2020
+- Atualizado a última vez em 15/12/2020
