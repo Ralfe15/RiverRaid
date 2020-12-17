@@ -9,6 +9,7 @@ screen_width = 704
 screen = pygame.display.set_mode((screen_width,screen_height))
 clock = pygame.time.Clock()
 
+
 #background
 bg_surface = pygame.image.load('images/bckg-1.jpeg').convert()
 bY = 0
@@ -43,7 +44,7 @@ start = True
 #player atributes
 width = plane.get_width()
 height = plane.get_height()
-vel = 5
+vel = 4
 left = False
 right = False
 
@@ -51,11 +52,10 @@ right = False
 plane_x = 350 - (int(width/2))
 plane_y = 420
 
+#fuel position in x axis
+fuel_x = 437
 
 player_hitbox = pygame.Rect(plane_x, plane_y, plane.get_width(),plane.get_height())
-
-fuel_pointer = pygame.Rect(437, 505,12,49)
-
 
 #camera scrolling
 up_pressed = False
@@ -97,7 +97,15 @@ def check_collision(enemies_list):
         if player_hitbox.colliderect(enemy_rect):
             return True
 
+def check_fuel():
+    global fuel_x
+    return fuel_x < 240
+
+    
+
 def redrawWindow():
+    global fuel_x
+
     if start:
         screen.blit(pygame.image.load('images/background.png').convert(), (0,bY))
         screen.blit(bg_surface, (0,bY2))
@@ -116,9 +124,12 @@ def redrawWindow():
     pygame.draw.line(screen,(255,0,0),(0, bY),(704,bY))
     pygame.draw.line(screen,(255,0,0),(0, bY2),(704,bY2))
     pygame.draw.rect(screen,(255,0,0),player_hitbox,2)
+    #barra cinza
     screen.blit(fuel_bar_bg, (0,480))
     #ponteiro de gasolina
-    pygame.draw.rect(screen, (252,252,84),fuel_pointer)
+    print(fuel_x)
+    pygame.draw.rect(screen, (252,252,84),pygame.Rect(fuel_x,504,12,49))
+    #indicador de quantidade de gasolina
     screen.blit(fuel_bar_indicator, (235,500))
     pygame.display.update()
 
@@ -162,8 +173,13 @@ while True:
     redrawWindow()
     checkScroll()
 
+    #move background
     bY += scroll_speed
     bY2 += scroll_speed
+
+    #move fuel pointer
+    fuel_x -= 0.125
+    
 
 
     
@@ -181,6 +197,10 @@ while True:
     if check_collision(enemies_start) or  check_collision(enemies_start_off): 
         pygame.quit()
         quit()
+    #no fuel check
+    if check_fuel():
+        pygame.quit()
+        quit()
 
     # keys handle
     keys = pygame.key.get_pressed()
@@ -189,6 +209,7 @@ while True:
         right = False
     elif keys[pygame.K_LEFT]:
         plane_x-=vel
+        
         player_hitbox.x -= vel
         left = True    
     elif keys[pygame.K_RIGHT]:
