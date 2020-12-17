@@ -99,7 +99,7 @@ def check_collision(enemies_list):
 
 def check_fuel():
     global fuel_x
-    return fuel_x < 240
+    return fuel_x < 254
 
     
 
