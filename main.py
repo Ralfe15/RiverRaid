@@ -30,14 +30,10 @@ choppa_r1, choppa_r2 = pygame.image.load('images/choppa_r1.png'), pygame.image.l
 choppa_right = [choppa_r1, choppa_r2]
 choppa_left = [choppa_l1, choppa_l2]
 
-ship_left = pygame.image.load('images/ship_l.png')
-ship_right = pygame.image.load('images/ship_r.png')
-
-jet_left = pygame.image.load('images/jet_l.png')
-jet_right = pygame.image.load('images/jet_r.png')
-
 choices_left = ['jet_l.png','ship_l.png','choppa_l1.png']
 choices_right = ['jet_r.png','ship_r.png','choppa_r1.png']
+
+fuel = pygame.image.load("images/fuel.png") #rememeber to scale 2x size at home
 
 start = True
 
@@ -69,13 +65,17 @@ def generate_enemies(number,off,max_x=405,min_x=145):
     for i in range(number):
         tmp = []
         if not off:
+            #generate enememies on main scene, with max height of 200 and minimum/maximum x specified on function call
             tmp.append([random.randint(min_x,max_x), random.randint(0,200)])
         elif off:
+            #generate enememies on main scene, with max height of -400/minumum of 0 and minimum/maximum x specified on function call
             tmp.append([random.randint(min_x,max_x), random.randint(-400,0)])
         tmp.append(random.choice([1,0, -1]))
         if tmp[1] == 1 or tmp[1] == 0:
+            #load sprite acording to direction
             tmp.append(random.choice(choices_right))
         elif tmp[1] == -1:
+            #load sprite acording to direction
             tmp.append(random.choice(choices_left))
         enemies_list.append(tmp)
     return enemies_list
@@ -84,6 +84,7 @@ def draw_enemies(enemies_list):
     for enemy in enemies_list:
         if not enemy[2][:6] == "choppa":
             screen.blit(pygame.image.load('images/'+enemy[2]), enemy[0])
+        #handles the heli animation
         elif enemy[2] == "choppa_l1.png":
             screen.blit(choppa_left[frame], enemy[0])
         elif enemy[2] == "choppa_r1.png":
@@ -100,8 +101,6 @@ def check_collision(enemies_list):
 def check_fuel():
     global fuel_x
     return fuel_x < 254
-
-    
 
 def redrawWindow():
     global fuel_x
@@ -127,7 +126,6 @@ def redrawWindow():
     #barra cinza
     screen.blit(fuel_bar_bg, (0,480))
     #ponteiro de gasolina
-    print(fuel_x)
     pygame.draw.rect(screen, (252,252,84),pygame.Rect(fuel_x,504,12,49))
     #indicador de quantidade de gasolina
     screen.blit(fuel_bar_indicator, (235,500))
