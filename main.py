@@ -9,6 +9,10 @@ screen_width = 704
 screen = pygame.display.set_mode((screen_width,screen_height))
 clock = pygame.time.Clock()
 
+score = 0
+
+myfont = pygame.font.Font("fonts/AtariSmall.ttf", 32)
+text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
 
 #background
 bg_surface = pygame.image.load('images/bckg-1.jpeg').convert()
@@ -74,14 +78,14 @@ def generate_enemies(number,off,max_x=405,min_x=145):
             gen_y = random.randint(0,200)
             #check if an enemy has the
             for j in enemies_list:
-                while gen_y in range(j[0][1], j[0][1]+20):
+                while gen_y in range(j[0][1]-25, j[0][1]+25):
                     gen_y = random.randint(0,200)
             tmp.append([random.randint(min_x,max_x), gen_y])   
         elif off:
             #generate enememies on main scene, with max height of -400/minumum of 0 and minimum/maximum x specified on function call
             gen_y = random.randint(-400,0)
             for j in enemies_list:
-                while gen_y in range(j[0][1], j[0][1]+20):
+                while gen_y in range(j[0][1]-25, j[0][1]+25):
                     gen_y = random.randint(-400,0)
             tmp.append([random.randint(min_x,max_x), gen_y])
         tmp.append(random.choice([1,0, -1]))
@@ -95,6 +99,7 @@ def generate_enemies(number,off,max_x=405,min_x=145):
     return enemies_list
 
 def generate_fuel(number,off,max_x=405,min_x=145):
+    #returns a list of lists, each being a [x,y] list of fuel coordinates, randomly generated
     fuel_list = []
     for i in range(number):
         tmp = []
@@ -123,7 +128,6 @@ def draw_enemies(enemies_list):
 def check_collision(enemies_list):
      for enemy in enemies_list:
         enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
-        pygame.draw.rect(screen,(0,255,0), enemy_rect,2)
         pygame.display.update()
         if player_hitbox.colliderect(enemy_rect):
             return True
@@ -134,6 +138,7 @@ def check_fuel():
 
 def redrawWindow():
     global fuel_x
+    global text_image
     if start:
         screen.blit(pygame.image.load('images/background.png').convert(), (0,bY))
         screen.blit(bg_surface, (0,bY2))
@@ -155,8 +160,6 @@ def redrawWindow():
     draw_enemies(enemies_start)
     draw_enemies(enemies_start_off)
     move_enemies()
-    pygame.draw.line(screen,(255,0,0),(0, bY),(704,bY))
-    pygame.draw.line(screen,(255,0,0),(0, bY2),(704,bY2))
     pygame.draw.rect(screen,(255,0,0),player_hitbox,2)
     #barra cinza
     screen.blit(fuel_bar_bg, (0,480))
@@ -166,16 +169,19 @@ def redrawWindow():
     screen.blit(fuel_bar_indicator, (235,500))
     move_draw_bullets()
     bullet_collision()
+    screen.blit(text_image, (20,515))
+    text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
     pygame.display.update()
 
 
 def move_enemies():
     for i in range(len(enemies_start)):
         enemies_start[i][0][1] += scroll_speed
-        enemies_start[i][0][0] += enemies_start[i][1] *0.5
+        if enemies_start[i][0][0] > 145 and enemies_start[i][0][0] < 500:
+            enemies_start[i][0][0] += enemies_start[i][1] * 0.5
     for i in range(len(enemies_start_off)):
         enemies_start_off[i][0][1] += scroll_speed
-        enemies_start_off[i][0][0] += enemies_start_off[i][1] *0.5
+        enemies_start_off[i][0][0] += enemies_start_off[i][1] * 0.5
 
 def checkScroll():
     global scroll_speed
@@ -215,31 +221,36 @@ def move_draw_bullets():
             bullets.remove(i)
 
 def bullet_collision():
-     for bullet in bullets:
-         for enemy in enemies_start:
-             enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
-             bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-             if bullet_rect.colliderect(enemy_rect):
-                bullets.remove(bullet)
-                enemies_start.remove(enemy)
-         for enemy in enemies_start_off:
-             enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
-             bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-             if bullet_rect.colliderect(enemy_rect):
-                bullets.remove(bullet)
-                enemies_start_off.remove(enemy)
-         for galoon in fuel_start:
-            galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
-            bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-            if bullet_rect.colliderect(galoon_rect):
-                bullets.remove(bullet)
-                fuel_start.remove(galoon)
-         for galoon in fuel_start_off:
-            galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
-            bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-            if bullet_rect.colliderect(galoon_rect):
-                bullets.remove(bullet)
-                fuel_start_off.remove(galoon)
+    global score
+    for bullet in bullets:
+     for enemy in enemies_start:
+         enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
+         bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
+         if bullet_rect.colliderect(enemy_rect):
+            score += 30
+            bullets.remove(bullet)
+            enemies_start.remove(enemy)
+     for enemy in enemies_start_off:
+         enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
+         bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
+         if bullet_rect.colliderect(enemy_rect):
+            score +=30
+            bullets.remove(bullet)
+            enemies_start_off.remove(enemy)
+     for galoon in fuel_start:
+        galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
+        bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
+        if bullet_rect.colliderect(galoon_rect):
+            score += 80
+            bullets.remove(bullet)
+            fuel_start.remove(galoon)
+     for galoon in fuel_start_off:
+        galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
+        bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
+        if bullet_rect.colliderect(galoon_rect):
+            score += 80
+            bullets.remove(bullet)
+            fuel_start_off.remove(galoon)
                 
 def collision_with_fuel(fuel_list):
     global fuel_x
@@ -247,8 +258,8 @@ def collision_with_fuel(fuel_list):
             galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
             if player_hitbox.colliderect(galoon_rect) and fuel_x < 437:
                 fuel_x += 0.6
-         
-    
+
+
 
 
 enemies_start = generate_enemies(3, False)
