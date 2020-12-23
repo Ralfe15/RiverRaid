@@ -1,7 +1,7 @@
 import pygame, sys, random
 
-pygame.init()
 
+pygame.init()
 
 screen_height = 576 #480 w/o bar
 screen_width = 704
@@ -63,7 +63,7 @@ fuel_x = 437
 player_hitbox = pygame.Rect(plane_x, plane_y, plane.get_width(),plane.get_height())
 
 #camera scrolling
-up_pressed = False
+up_pressed= False
 down_pressed = False
 scroll_speed = 1.5
 
@@ -195,30 +195,21 @@ def checkScroll():
         elif scroll_speed < 1.5:
             scroll_speed += 0.08       
 
-def cooldown_handler():
-    global cooldown_counter
-    global cooldown
-    if cooldown_counter >= cooldown:
-        cooldown_counter = 0
-    else:
-        cooldown_counter += 1
-        
+
 def bullet_isoffscreen(curr):
     return curr[1] <= screen_height and curr[1] >= 0
 
 def shoot():
+    global space_pressed
     global cooldown_counter
-    if cooldown_counter == 0:
-        bullets.append([plane_x+(width/2)-3, 420])
-        cooldown_counter = 1
+    bullets.append([plane_x+(width/2)-3, 420])
 
 def move_draw_bullets():
-    cooldown_handler()
     for i in bullets:
         screen.blit(pygame.image.load("images/bullet.png"), (i[0], i[1]))
         i[1] -= 15
         if not bullet_isoffscreen(i):
-            bullets.remove(i)
+            bullets.pop(bullets.index(i))
 
 def bullet_collision():
     global score
@@ -312,6 +303,10 @@ while True:
     collision_with_fuel(fuel_start_off)
     # keys handle
     keys = pygame.key.get_pressed()
+    if keys[pygame.K_SPACE]:
+        if len(bullets) == 0:
+            shoot()
+            print(bullets)
     if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
         left = False
         right = False
@@ -333,8 +328,7 @@ while True:
     else:
         up_pressed = False
         down_pressed = False
-    if keys[pygame.K_SPACE]:
-        shoot()
+
 
 
     clock.tick(speed)
