@@ -1,4 +1,4 @@
-import pygame, sys, random
+import pygame, sys, random, json
 
 
 pygame.init()
@@ -17,6 +17,8 @@ text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
 #background
 on_screen = pygame.image.load('map/map1/1.png').convert()
 off_screen = pygame.image.load('map/map1/2.png').convert()
+rects_on_screen = []
+rects_off_screen = []
 bY = 0
 bY2 = off_screen.get_height()
 fuel_bar_bg = pygame.image.load('images/bar test.png')
@@ -253,7 +255,7 @@ def generate_map(start=False):
     else:
         choice = random.choice([2,2]) #add more maps dirs later
         return iter(['map/map{}/1.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/3.png'.format(choice)])
-    
+#def generate_rects(path):
 
 
 #generate enemies at start
@@ -264,8 +266,11 @@ fuel_start_off = generate_fuel(3, True)
 
 curr_map = generate_map(True)
 
-on_screen = pygame.image.load(next(curr_map)).convert()
-off_screen = pygame.image.load(next(curr_map)).convert()
+aux = next(curr_map)
+on_screen = pygame.image.load(aux).convert()
+
+aux2 = next(curr_map)
+off_screen = pygame.image.load(aux2).convert()
 
 
 speed = 60
