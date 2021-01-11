@@ -15,9 +15,10 @@ myfont = pygame.font.Font("fonts/AtariSmall.ttf", 32)
 text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
 
 #background
-bg_surface = pygame.image.load('images/bckg-1.jpeg').convert()
+on_screen = pygame.image.load('map/map1/1.png').convert()
+off_screen = pygame.image.load('map/map1/2.png').convert()
 bY = 0
-bY2 = bg_surface.get_height()
+bY2 = off_screen.get_height()
 fuel_bar_bg = pygame.image.load('images/bar test.png')
 fuel_bar_indicator = pygame.image.load('images/bar_indicators.png')
 
@@ -139,12 +140,8 @@ def check_fuel():
 def redrawWindow():
     global fuel_x
     global text_image
-    if start:
-        screen.blit(pygame.image.load('images/background.png').convert(), (0,bY))
-        screen.blit(bg_surface, (0,bY2))
-    else:
-        screen.blit(bg_surface, (0,bY))
-        screen.blit(bg_surface, (0,bY2))
+    screen.blit(on_screen, (0,bY))
+    screen.blit(off_screen, (0,bY2))
     if right:
         draw_move_fuel(fuel_start)
         draw_move_fuel(fuel_start_off)
@@ -161,11 +158,11 @@ def redrawWindow():
     draw_enemies(enemies_start_off)
     move_enemies()
     pygame.draw.rect(screen,(255,0,0),player_hitbox,2)
-    #barra cinza
+    #gray bar
     screen.blit(fuel_bar_bg, (0,480))
-    #ponteiro de gasolina
+    #fuel pointer
     pygame.draw.rect(screen, (252,252,84),pygame.Rect(fuel_x,504,12,49))
-    #indicador de quantidade de gasolina
+    #fuel ammount indicators
     screen.blit(fuel_bar_indicator, (235,500))
     move_draw_bullets()
     bullet_collision()
@@ -250,13 +247,25 @@ def collision_with_fuel(fuel_list):
             if player_hitbox.colliderect(galoon_rect) and fuel_x < 437:
                 fuel_x += 0.6
 
+def generate_map(start=False):
+    if start:
+        return iter(['map/map1/1.png','map/map1/2.png','map/map1/2.png','map/map1/2.png','map/map1/3.png'])
+    else:
+        choice = random.choice([2,2]) #add more maps dirs later
+        return iter(['map/map{}/1.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/3.png'.format(choice)])
+    
 
 
-
+#generate enemies at start
 enemies_start = generate_enemies(3, False)
 enemies_start_off = generate_enemies(5, True)
 fuel_start = generate_fuel(1,False)
 fuel_start_off = generate_fuel(3, True)
+
+curr_map = generate_map(True)
+
+on_screen = pygame.image.load(next(curr_map)).convert()
+off_screen = pygame.image.load(next(curr_map)).convert()
 
 
 speed = 60
@@ -280,16 +289,31 @@ while True:
     fuel_x -= 0.125
     
     #handle infinite scroll
-
-    if bY > bg_surface.get_height():
-        bY = -1*bg_surface.get_height()
+    if bY > off_screen.get_height():
+        bY = -1*off_screen.get_height()
         start = False
         enemies_start = generate_enemies(5, True)
         fuel_start = generate_fuel(3,True)
-    if bY2 > bg_surface.get_height():
-        bY2 = -1*bg_surface.get_height()
+        try:
+            on_screen = pygame.image.load(next(curr_map)).convert()
+        except StopIteration:
+            del curr_map
+            curr_map = generate_map(False)
+            on_screen = pygame.image.load(next(curr_map)).convert()
+        
+    if bY2 > off_screen.get_height():
+        bY2 = -1*off_screen.get_height()
         enemies_start_off = generate_enemies(5, True)
         fuel_start_off = generate_fuel(3, True)
+        try:
+            off_screen=pygame.image.load(next(curr_map)).convert()
+        except StopIteration:
+            del curr_map
+            curr_map = generate_map(False)
+            off_screen = pygame.image.load(next(curr_map)).convert()
+
+            
+        
 
     # collision with enemies check
     if check_collision(enemies_start) or  check_collision(enemies_start_off): 
@@ -306,7 +330,6 @@ while True:
     if keys[pygame.K_SPACE]:
         if len(bullets) == 0:
             shoot()
-            print(bullets)
     if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
         left = False
         right = False
