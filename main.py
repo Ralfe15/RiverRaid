@@ -1,5 +1,7 @@
+
 import pygame, sys, random, json
 
+rects = {"1":[(0,336,288,144), (416,336,288,144), (224,332,32,4),(448,332,32,4),(192,328,32,4),(280,328,32,4),(160,324,32,4),(512,324,32,4),(0,0,159,324),(546,0,158,324)]}
 
 pygame.init()
 
@@ -70,6 +72,7 @@ up_pressed= False
 down_pressed = False
 scroll_speed = 1.5
 
+
 #enemies
 def generate_enemies(number,off,max_x=405,min_x=145):
     #returns a list of lists, each being an enemy with: [0] = list of x,y coords, [1] = direction, [2] = enemy type
@@ -79,18 +82,25 @@ def generate_enemies(number,off,max_x=405,min_x=145):
         if not off:
             #generate enememies on main scene, with max height of 200 and minimum/maximum x specified on function call
             gen_y = random.randint(0,200)
-            #check if an enemy has the
-            for j in enemies_list:
-                while gen_y in range(j[0][1]-25, j[0][1]+25):
+            gen_x = random.randint(min_x,max_x)
+            aux = (gen_x,gen_y)
+            for enemy in enemies_list:
+                while aux[1] in range(enemy[0][1]-30, enemy[0][1]+40):
                     gen_y = random.randint(0,200)
-            tmp.append([random.randint(min_x,max_x), gen_y])   
+                    gen_x = random.randint(min_x,max_x)
+                    aux = (gen_x,gen_y)
+            tmp.append(list(aux))   
         elif off:
             #generate enememies on main scene, with max height of -400/minumum of 0 and minimum/maximum x specified on function call
             gen_y = random.randint(-400,0)
-            for j in enemies_list:
-                while gen_y in range(j[0][1]-25, j[0][1]+25):
+            gen_x = random.randint(min_x,max_x)
+            aux = (gen_x,gen_y)
+            for enemy in enemies_list:
+                while gen_y in range(enemy[0][1]-30,enemy[0][1]+40):
                     gen_y = random.randint(-400,0)
-            tmp.append([random.randint(min_x,max_x), gen_y])
+                    gen_x = random.randint(min_x,max_x)
+                    aux = (gen_x,gen_y)
+            tmp.append(list(aux))
         tmp.append(random.choice([1,0, -1]))
         if tmp[1] == 1 or tmp[1] == 0:
             #load sprite acording to direction
@@ -98,7 +108,7 @@ def generate_enemies(number,off,max_x=405,min_x=145):
         elif tmp[1] == -1:
             #load sprite acording to direction
             tmp.append(random.choice(choices_left))
-        enemies_list.append(tmp)
+        enemies_list.append(tmp)    
     return enemies_list
 
 def generate_fuel(number,off,max_x=405,min_x=145):
@@ -107,9 +117,11 @@ def generate_fuel(number,off,max_x=405,min_x=145):
     for i in range(number):
         tmp = []
         if not off:
-            tmp.append([random.randint(min_x,max_x), random.randint(0,200)])
+            aux = [random.randint(min_x,max_x), random.randint(0,200)]
+            tmp.append(aux)
         elif off:
-            tmp.append([random.randint(min_x,max_x), random.randint(-400,0)])
+            aux = [random.randint(min_x,max_x), random.randint(-400,0)]
+            tmp.append(aux)
         fuel_list.append(tmp)
     return fuel_list
 
@@ -195,23 +207,26 @@ def checkScroll():
             scroll_speed += 0.08       
 
 
-def bullet_isoffscreen(curr):
+def bullet_isonscreen(curr):
     return curr[1] <= screen_height and curr[1] >= 0
 
 def shoot():
     global space_pressed
-    global cooldown_counter
     bullets.append([plane_x+(width/2)-3, 420])
 
 def move_draw_bullets():
     for i in bullets:
         screen.blit(pygame.image.load("images/bullet.png"), (i[0], i[1]))
-        i[1] -= 15
-        if not bullet_isoffscreen(i):
+        if not up_pressed:
+            i[1] -= 15
+        else:
+            i[1] -= 20-scroll_speed
+        if not bullet_isonscreen(i):
             bullets.pop(bullets.index(i))
 
 def bullet_collision():
     global score
+    removed = False
     for bullet in bullets:
      for enemy in enemies_start:
          enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
@@ -219,27 +234,31 @@ def bullet_collision():
          if bullet_rect.colliderect(enemy_rect):
             score += 30
             bullets.remove(bullet)
+            removed = True
             enemies_start.remove(enemy)
      for enemy in enemies_start_off:
          enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
          bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-         if bullet_rect.colliderect(enemy_rect):
+         if bullet_rect.colliderect(enemy_rect) and not removed:
             score +=30
             bullets.remove(bullet)
+            removed = True
             enemies_start_off.remove(enemy)
      for galoon in fuel_start:
         galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
         bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-        if bullet_rect.colliderect(galoon_rect):
+        if bullet_rect.colliderect(galoon_rect)and not removed:
             score += 80
             bullets.remove(bullet)
+            removed = True
             fuel_start.remove(galoon)
      for galoon in fuel_start_off:
         galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
         bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-        if bullet_rect.colliderect(galoon_rect):
+        if bullet_rect.colliderect(galoon_rect) and not removed:
             score += 80
             bullets.remove(bullet)
+            removed = True
             fuel_start_off.remove(galoon)
                 
 def collision_with_fuel(fuel_list):
@@ -247,7 +266,7 @@ def collision_with_fuel(fuel_list):
     for galoon in fuel_list:
             galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
             if player_hitbox.colliderect(galoon_rect) and fuel_x < 437:
-                fuel_x += 0.6
+                fuel_x += 0.9
 
 def generate_map(start=False):
     if start:
@@ -259,14 +278,17 @@ def generate_map(start=False):
 
 
 #generate enemies at start
-enemies_start = generate_enemies(3, False)
-enemies_start_off = generate_enemies(5, True)
+enemies_start = generate_enemies(2, False)
+enemies_start_off = generate_enemies(4, True)
 fuel_start = generate_fuel(1,False)
-fuel_start_off = generate_fuel(3, True)
+fuel_start_off = generate_fuel(2, True)
 
 curr_map = generate_map(True)
 
 aux = next(curr_map)
+
+curr_rects = [pygame.Rect(i) for i in rects[aux[-5]]]
+
 on_screen = pygame.image.load(aux).convert()
 
 aux2 = next(curr_map)
@@ -297,8 +319,8 @@ while True:
     if bY > off_screen.get_height():
         bY = -1*off_screen.get_height()
         start = False
-        enemies_start = generate_enemies(5, True)
-        fuel_start = generate_fuel(3,True)
+        enemies_start = generate_enemies(3, True)
+        fuel_start = generate_fuel(2,True)
         try:
             on_screen = pygame.image.load(next(curr_map)).convert()
         except StopIteration:
@@ -308,8 +330,8 @@ while True:
         
     if bY2 > off_screen.get_height():
         bY2 = -1*off_screen.get_height()
-        enemies_start_off = generate_enemies(5, True)
-        fuel_start_off = generate_fuel(3, True)
+        enemies_start_off = generate_enemies(3, True)
+        fuel_start_off = generate_fuel(2, True)
         try:
             off_screen=pygame.image.load(next(curr_map)).convert()
         except StopIteration:
