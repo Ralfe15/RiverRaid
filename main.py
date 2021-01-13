@@ -1,7 +1,7 @@
 
 import pygame, sys, random, json
 
-rects = {"1":[(0,336,288,144), (413,336,288,144), (224,332,32,4),(448,332,32,4),(192,328,32,4),(480,328,32,4),(160,324,32,4),(512,324,32,4),(0,0,159,324),(543,0,158,324)],"2":[(0,0,159,470),(543,0,159,470)]}
+rects = {"1":[(0,336,288,144), (413,336,288,144), (224,332,32,4),(448,332,32,4),(192,328,32,4),(480,328,32,4),(160,324,32,4),(512,324,32,4),(0,0,159,324),(543,0,158,324)],"2":[(0,0,159,470),(543,0,159,470)],"3":[(0,159,159,324),(543,157,159,324),(160,151,32,5),(512,151,32,5),(192,147,32,5),(480,147,32,5),(224,143,32,5),(448,143,32,5),(256,139,32,5),(416,139,32,5),(256,0,31,139),(416,0,31,139)]}
 
 pygame.init()
 
@@ -108,7 +108,8 @@ def generate_enemies(number,off,max_x=405,min_x=145):
         elif tmp[1] == -1:
             #load sprite acording to direction
             tmp.append(random.choice(choices_left))
-        enemies_list.append(tmp)    
+        enemies_list.append(tmp)
+    print(enemies_list)
     return enemies_list
 
 def generate_fuel(number,off,max_x=405,min_x=145):
@@ -190,13 +191,43 @@ def redrawWindow():
 
 
 def move_enemies():
-    for i in range(len(enemies_start)):
-        enemies_start[i][0][1] += scroll_speed
-        if enemies_start[i][0][0] > 145 and enemies_start[i][0][0] < 500:
-            enemies_start[i][0][0] += enemies_start[i][1] * 0.5
-    for i in range(len(enemies_start_off)):
-        enemies_start_off[i][0][1] += scroll_speed
-        enemies_start_off[i][0][0] += enemies_start_off[i][1] * 0.5
+    for enemy in enemies_start:
+        enemy_rect = pygame.Rect(enemy[0][0],enemy[0][1],pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height())
+        for rect in curr_rects:
+            if enemy_rect.colliderect(rect):
+                enemy[1]*=-1
+                if "r" in enemy[2]:
+                    enemy[2] = enemy[2].replace("r","l")
+                elif "l" in enemy[2]:
+                    enemy[2] = enemy[2].replace("l","r")
+        for rect in curr_rects_off:
+            if enemy_rect.colliderect(rect):
+                enemy[1]*=-1
+                if "r" in enemy[2]:
+                    enemy[2] = enemy[2].replace("r","l")
+                elif "l" in enemy[2]:
+                    enemy[2] = enemy[2].replace("l","r")
+        enemy[0][1] += scroll_speed
+        enemy[0][0] += enemy[1]*1
+    for enemy in enemies_start_off:
+        enemy_rect = pygame.Rect(enemy[0][0],enemy[0][1],pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height())
+        for rect in curr_rects:
+            if enemy_rect.colliderect(rect):
+                enemy[1]*=-1
+                if "r" in enemy[2]:
+                    enemy[2] = enemy[2].replace("r","l")
+                elif "l" in enemy[2]:
+                    enemy[2] = enemy[2].replace("l","r")
+        for rect in curr_rects_off:
+            if enemy_rect.colliderect(rect):
+                enemy[1]*=-1
+                if "r" in enemy[2]:
+                    enemy[2] = enemy[2].replace("r","l")
+                elif "l" in enemy[2]:
+                    enemy[2] = enemy[2].replace("l","r")
+        enemy[0][1] += scroll_speed
+        enemy[0][0] += enemy[1]*1
+            
 
 def checkScroll():
     global scroll_speed
@@ -232,38 +263,48 @@ def bullet_collision():
     global score
     removed = False
     for bullet in bullets:
-     for enemy in enemies_start:
-         enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
-         bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-         if bullet_rect.colliderect(enemy_rect):
-            score += 30
-            bullets.remove(bullet)
-            removed = True
-            enemies_start.remove(enemy)
-     for enemy in enemies_start_off:
-         enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
-         bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-         if bullet_rect.colliderect(enemy_rect) and not removed:
-            score +=30
-            bullets.remove(bullet)
-            removed = True
-            enemies_start_off.remove(enemy)
-     for galoon in fuel_start:
-        galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
-        bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-        if bullet_rect.colliderect(galoon_rect)and not removed:
-            score += 80
-            bullets.remove(bullet)
-            removed = True
-            fuel_start.remove(galoon)
-     for galoon in fuel_start_off:
-        galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
-        bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
-        if bullet_rect.colliderect(galoon_rect) and not removed:
-            score += 80
-            bullets.remove(bullet)
-            removed = True
-            fuel_start_off.remove(galoon)
+        for enemy in enemies_start:
+            enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
+            bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
+            if bullet_rect.colliderect(enemy_rect):
+                score += 30
+                bullets.remove(bullet)
+                removed = True
+                enemies_start.remove(enemy)
+        for enemy in enemies_start_off:
+            enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
+            bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
+            if bullet_rect.colliderect(enemy_rect) and not removed:
+                score +=30
+                bullets.remove(bullet)
+                removed = True
+                enemies_start_off.remove(enemy)
+        for galoon in fuel_start:
+            galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
+            bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
+            if bullet_rect.colliderect(galoon_rect)and not removed:
+                score += 80
+                bullets.remove(bullet)
+                removed = True
+                fuel_start.remove(galoon)
+        for galoon in fuel_start_off:
+            galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
+            bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
+            if bullet_rect.colliderect(galoon_rect) and not removed:
+                score += 80
+                bullets.remove(bullet)
+                removed = True
+                fuel_start_off.remove(galoon)
+        for rect in curr_rects:
+            bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
+            if bullet_rect.colliderect(rect) and not removed:
+                bullets.remove(bullet)
+                removed = True
+        for rect in curr_rects_off:
+            bullet_rect = pygame.Rect(bullet[0],bullet[1], pygame.image.load("images/bullet.png").get_width(), pygame.image.load("images/bullet.png").get_height())
+            if bullet_rect.colliderect(rect) and not removed:
+                bullets.remove(bullet)
+                removed = True
                 
 def collision_with_fuel(fuel_list):
     global fuel_x
@@ -313,7 +354,6 @@ while True:
     frame = int((time/speed)%len(choppa_right))
 
     redrawWindow()
-
     checkScroll()
 
     #move background
@@ -340,7 +380,11 @@ while True:
         enemies_start = generate_enemies(3, True)
         fuel_start = generate_fuel(2,True)
         try:
-            on_screen = pygame.image.load(next(curr_map)).convert()
+            aux = next(curr_map)
+            curr_rects = [pygame.Rect(i) for i in rects[aux[-5]]]
+            for rect in curr_rects:
+                rect.y-=480
+            on_screen = pygame.image.load(aux).convert()
         except StopIteration:
             del curr_map
             curr_map = generate_map(False)
@@ -351,7 +395,11 @@ while True:
         enemies_start_off = generate_enemies(3, True)
         fuel_start_off = generate_fuel(2, True)
         try:
-            off_screen=pygame.image.load(next(curr_map)).convert()
+            aux2 = next(curr_map)
+            curr_rects_off = [pygame.Rect(i) for i in rects[aux2[-5]]]
+            for rect in curr_rects_off:
+                rect.y-=480
+            off_screen=pygame.image.load(aux2).convert()
         except StopIteration:
             del curr_map
             curr_map = generate_map(False)
