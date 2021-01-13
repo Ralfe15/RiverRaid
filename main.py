@@ -1,7 +1,7 @@
 
 import pygame, sys, random, json
 
-rects = {"1":[(0,336,288,144), (416,336,288,144), (224,332,32,4),(448,332,32,4),(192,328,32,4),(280,328,32,4),(160,324,32,4),(512,324,32,4),(0,0,159,324),(546,0,158,324)]}
+rects = {"1":[(0,336,288,144), (413,336,288,144), (224,332,32,4),(448,332,32,4),(192,328,32,4),(480,328,32,4),(160,324,32,4),(512,324,32,4),(0,0,159,324),(543,0,158,324)],"2":[(0,0,159,470),(543,0,159,470)]}
 
 pygame.init()
 
@@ -65,12 +65,12 @@ plane_y = 420
 #fuel position in x axis
 fuel_x = 437
 
-player_hitbox = pygame.Rect(plane_x, plane_y, plane.get_width(),plane.get_height())
+player_hitbox = pygame.Rect(plane_x, plane_y, plane.get_width()-2,plane.get_height())
 
 #camera scrolling
 up_pressed= False
 down_pressed = False
-scroll_speed = 1.5
+scroll_speed = 1
 
 
 #enemies
@@ -182,6 +182,10 @@ def redrawWindow():
     bullet_collision()
     screen.blit(text_image, (20,515))
     text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
+    for rect in curr_rects:
+        pygame.draw.rect(screen,(255,0,0),rect,2)
+    for rect in curr_rects_off:
+        pygame.draw.rect(screen,(255,0,0),rect,2)
     pygame.display.update()
 
 
@@ -196,15 +200,15 @@ def move_enemies():
 
 def checkScroll():
     global scroll_speed
-    if up_pressed and scroll_speed < 5.5:
-        scroll_speed += 0.5
-    elif down_pressed and scroll_speed > 1.0:
-        scroll_speed -= 0.5
+    if up_pressed and scroll_speed < 6:
+        scroll_speed += 1
+    elif down_pressed and scroll_speed > 1:
+        scroll_speed -= 1
     else:
-        if scroll_speed > 1.5:
-            scroll_speed -= 0.08
-        elif scroll_speed < 1.5:
-            scroll_speed += 0.08       
+        if scroll_speed > 2:
+            scroll_speed -= 1
+        elif scroll_speed < 2:
+            scroll_speed += 1       
 
 
 def bullet_isonscreen(curr):
@@ -292,10 +296,13 @@ curr_rects = [pygame.Rect(i) for i in rects[aux[-5]]]
 on_screen = pygame.image.load(aux).convert()
 
 aux2 = next(curr_map)
+curr_rects_off = [pygame.Rect(i) for i in rects[aux2[-5]]]
+for rect in curr_rects_off:
+    rect.y -= 480
 off_screen = pygame.image.load(aux2).convert()
 
 
-speed = 60
+speed = 45
 
 while True:
     for event in pygame.event.get():
@@ -306,11 +313,22 @@ while True:
     frame = int((time/speed)%len(choppa_right))
 
     redrawWindow()
+
     checkScroll()
 
     #move background
     bY += scroll_speed
     bY2 += scroll_speed
+    for rect in curr_rects:
+        rect.move_ip(0,scroll_speed)
+        if player_hitbox.colliderect(rect):
+            pygame.quit()
+            quit()
+    for rect in curr_rects_off:
+        rect.move_ip(0,scroll_speed)
+        if player_hitbox.colliderect(rect):
+            pygame.quit()
+            quit()
 
     #move fuel pointer
     fuel_x -= 0.125
