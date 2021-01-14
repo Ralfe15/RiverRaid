@@ -1,7 +1,9 @@
 
 import pygame, sys, random, json
+from rectangles import getRects
 
-rects = {"1":[(0,336,288,144), (413,336,288,144), (224,332,32,4),(448,332,32,4),(192,328,32,4),(480,328,32,4),(160,324,32,4),(512,324,32,4),(0,0,159,324),(543,0,158,324)],"2":[(0,0,159,470),(543,0,159,470)],"3":[(0,159,159,324),(543,157,159,324),(160,151,32,5),(512,151,32,5),(192,147,32,5),(480,147,32,5),(224,143,32,5),(448,143,32,5),(256,139,32,5),(416,139,32,5),(256,0,31,139),(416,0,31,139)]}
+rects = getRects()
+
 
 pygame.init()
 
@@ -109,7 +111,6 @@ def generate_enemies(number,off,max_x=405,min_x=145):
             #load sprite acording to direction
             tmp.append(random.choice(choices_left))
         enemies_list.append(tmp)
-    print(enemies_list)
     return enemies_list
 
 def generate_fuel(number,off,max_x=405,min_x=145):
@@ -329,15 +330,11 @@ fuel_start = generate_fuel(1,False)
 fuel_start_off = generate_fuel(2, True)
 
 curr_map = generate_map(True)
-
 aux = next(curr_map)
-
-curr_rects = [pygame.Rect(i) for i in rects[aux[-5]]]
-
+curr_rects = [pygame.Rect(i) for i in rects[aux[7:10]]]
 on_screen = pygame.image.load(aux).convert()
-
 aux2 = next(curr_map)
-curr_rects_off = [pygame.Rect(i) for i in rects[aux2[-5]]]
+curr_rects_off = [pygame.Rect(i) for i in rects[aux2[7:10]]]
 for rect in curr_rects_off:
     rect.y -= 480
 off_screen = pygame.image.load(aux2).convert()
@@ -381,14 +378,18 @@ while True:
         fuel_start = generate_fuel(2,True)
         try:
             aux = next(curr_map)
-            curr_rects = [pygame.Rect(i) for i in rects[aux[-5]]]
+            curr_rects = [pygame.Rect(i) for i in rects[aux[7:10]]]
             for rect in curr_rects:
                 rect.y-=480
             on_screen = pygame.image.load(aux).convert()
         except StopIteration:
             del curr_map
             curr_map = generate_map(False)
-            on_screen = pygame.image.load(next(curr_map)).convert()
+            aux = next(curr_map)
+            curr_rects = [pygame.Rect(i) for i in rects[aux[7:10]]]
+            for rect in curr_rects:
+                rect.y-=480
+            on_screen = pygame.image.load(aux).convert()
         
     if bY2 > off_screen.get_height():
         bY2 = -1*off_screen.get_height()
@@ -396,20 +397,24 @@ while True:
         fuel_start_off = generate_fuel(2, True)
         try:
             aux2 = next(curr_map)
-            curr_rects_off = [pygame.Rect(i) for i in rects[aux2[-5]]]
+            curr_rects_off = [pygame.Rect(i) for i in rects[aux2[7:10]]]
             for rect in curr_rects_off:
                 rect.y-=480
             off_screen=pygame.image.load(aux2).convert()
         except StopIteration:
             del curr_map
             curr_map = generate_map(False)
-            off_screen = pygame.image.load(next(curr_map)).convert()
+            aux2 = next(curr_map)
+            curr_rects_off = [pygame.Rect(i) for i in rects[aux2[7:10]]]
+            for rect in curr_rects_off:
+                rect.y-=480
+            off_screen = pygame.image.load(aux2).convert()
 
             
         
 
     # collision with enemies check
-    if check_collision(enemies_start) or  check_collision(enemies_start_off): 
+    if check_collision(enemies_start) or  check_collision(enemies_start_off):
         pygame.quit()
         quit()
     #no fuel check
