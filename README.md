@@ -25,9 +25,9 @@ Foi o primeiro jogo a implementar o sistema de checkpoint.---*
 4. ~~Gerar galões de combustível~~
 5. ~~Disparar projéteis e checar colisões~~
 6. ~~Barra de combustível~~
-7. Evitar stacks de inimigos
+7. ~~Evitar stacks de inimigos~~
 8. ~~Controle de combustivel~~
-9. Gerar mapas aleatórios
-10. Checkpoints
+9. ~~Gerar mapas aleatórios~~
+10. Checkpoints (pontes)
 
-- Atualizado a última vez em 21/12/2020
+- Atualizado a última vez em 14/01/2020
