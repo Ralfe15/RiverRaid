@@ -1,14 +1,15 @@
-
 import pygame, sys, random, json
 from rectangles import getRects
 
 rects = getRects()
 
-
 pygame.init()
 
 screen_height = 576 #480 w/o bar
 screen_width = 704
+
+MAX_SPEED = 6
+MIN_SPEED = 2
 
 screen = pygame.display.set_mode((screen_width,screen_height))
 clock = pygame.time.Clock()
@@ -184,10 +185,6 @@ def redrawWindow():
     bullet_collision()
     screen.blit(text_image, (20,515))
     text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
-    for rect in curr_rects:
-        pygame.draw.rect(screen,(255,0,0),rect,2)
-    for rect in curr_rects_off:
-        pygame.draw.rect(screen,(255,0,0),rect,2)
     pygame.display.update()
 
 
@@ -232,14 +229,14 @@ def move_enemies():
 
 def checkScroll():
     global scroll_speed
-    if up_pressed and scroll_speed < 6:
+    if up_pressed and scroll_speed < MAX_SPEED:
         scroll_speed += 1
     elif down_pressed and scroll_speed > 1:
         scroll_speed -= 1
     else:
-        if scroll_speed > 2:
+        if scroll_speed > MIN_SPEED:
             scroll_speed -= 1
-        elif scroll_speed < 2:
+        elif scroll_speed < MIN_SPEED:
             scroll_speed += 1       
 
 
@@ -320,11 +317,10 @@ def generate_map(start=False):
     else:
         choice = random.choice([2,2]) #add more maps dirs later
         return iter(['map/map{}/1.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/3.png'.format(choice)])
-#def generate_rects(path):
 
 
 #generate enemies at start
-enemies_start = generate_enemies(2, False)
+enemies_start = generate_enemies(3, False)
 enemies_start_off = generate_enemies(4, True)
 fuel_start = generate_fuel(1,False)
 fuel_start_off = generate_fuel(2, True)
@@ -374,8 +370,10 @@ while True:
     if bY > off_screen.get_height():
         bY = -1*off_screen.get_height()
         start = False
-        enemies_start = generate_enemies(3, True)
+        enemies_start = generate_enemies(4, True)
         fuel_start = generate_fuel(2,True)
+        MIN_SPEED+=1
+        MAX_SPEED+=1
         try:
             aux = next(curr_map)
             curr_rects = [pygame.Rect(i) for i in rects[aux[7:10]]]
@@ -393,7 +391,7 @@ while True:
         
     if bY2 > off_screen.get_height():
         bY2 = -1*off_screen.get_height()
-        enemies_start_off = generate_enemies(3, True)
+        enemies_start_off = generate_enemies(4, True)
         fuel_start_off = generate_fuel(2, True)
         try:
             aux2 = next(curr_map)
