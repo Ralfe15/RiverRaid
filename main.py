@@ -1,7 +1,8 @@
 import pygame, sys, random, json
-from rectangles import getRects
+from rectangles import getRects, getBridges
 
 rects = getRects()
+bridges = getBridges()
 
 pygame.init()
 
@@ -75,6 +76,8 @@ up_pressed= False
 down_pressed = False
 scroll_speed = 1
 
+#checkpoint
+checkpoint = ""
 
 #enemies
 def generate_enemies(number,off,max_x=405,min_x=145):
@@ -83,26 +86,26 @@ def generate_enemies(number,off,max_x=405,min_x=145):
     for i in range(number):
         tmp = []
         if not off:
-            #generate enememies on main scene, with max height of 200 and minimum/maximum x specified on function call
             gen_y = random.randint(0,200)
             gen_x = random.randint(min_x,max_x)
             aux = (gen_x,gen_y)
             for enemy in enemies_list:
-                while aux[1] in range(enemy[0][1]-30, enemy[0][1]+40):
+                while gen_y in range(enemy[0][1]-30, enemy[0][1]+40):
                     gen_y = random.randint(0,200)
-                    gen_x = random.randint(min_x,max_x)
-                    aux = (gen_x,gen_y)
+            while pygame.Rect(gen_x,gen_y, 64,32).collidelist(curr_rects) != -1 or pygame.Rect(gen_x,gen_y, 64,32).collidelist(curr_rects_off) != -1:
+                gen_x = random.randint(0,704)
+            aux = (gen_x,gen_y)
             tmp.append(list(aux))   
         elif off:
-            #generate enememies on main scene, with max height of -400/minumum of 0 and minimum/maximum x specified on function call
             gen_y = random.randint(-400,0)
             gen_x = random.randint(min_x,max_x)
             aux = (gen_x,gen_y)
             for enemy in enemies_list:
                 while gen_y in range(enemy[0][1]-30,enemy[0][1]+40):
                     gen_y = random.randint(-400,0)
-                    gen_x = random.randint(min_x,max_x)
-                    aux = (gen_x,gen_y)
+            while pygame.Rect(gen_x,gen_y, 64,32).collidelist(curr_rects) != -1 or pygame.Rect(gen_x,gen_y, 64,32).collidelist(curr_rects_off) != -1:
+                gen_x = random.randint(0,704)
+            aux = (gen_x,gen_y)
             tmp.append(list(aux))
         tmp.append(random.choice([1,0, -1]))
         if tmp[1] == 1 or tmp[1] == 0:
@@ -114,16 +117,21 @@ def generate_enemies(number,off,max_x=405,min_x=145):
         enemies_list.append(tmp)
     return enemies_list
 
-def generate_fuel(number,off,max_x=405,min_x=145):
+def generate_fuel(number,off,max_x=704,min_x=0):
     #returns a list of lists, each being a [x,y] list of fuel coordinates, randomly generated
     fuel_list = []
     for i in range(number):
         tmp = []
         if not off:
             aux = [random.randint(min_x,max_x), random.randint(0,200)]
+
+            while pygame.Rect(aux[0],aux[1],pygame.image.load("images/fuel.png").get_width(), pygame.image.load("images/fuel.png").get_height()).collidelist(curr_rects) != -1 or pygame.Rect(aux[0],aux[1],pygame.image.load("images/fuel.png").get_width(), pygame.image.load("images/fuel.png").get_height()).collidelist(curr_rects_off) != -1:
+                aux[0] = random.randint(min_x,max_x)
             tmp.append(aux)
         elif off:
             aux = [random.randint(min_x,max_x), random.randint(-400,0)]
+            while pygame.Rect(aux[0],aux[1],pygame.image.load("images/fuel.png").get_width(), pygame.image.load("images/fuel.png").get_height()).collidelist(curr_rects) != -1 or pygame.Rect(aux[0],aux[1],pygame.image.load("images/fuel.png").get_width(), pygame.image.load("images/fuel.png").get_height()).collidelist(curr_rects_off) != -1:
+                aux[0] = random.randint(min_x,max_x)
             tmp.append(aux)
         fuel_list.append(tmp)
     return fuel_list
@@ -142,6 +150,7 @@ def draw_enemies(enemies_list):
             screen.blit(choppa_left[frame], enemy[0])
         elif enemy[2] == "choppa_r1.png":
             screen.blit(choppa_right[frame], enemy[0])
+        
             
 def check_collision(enemies_list):
      for enemy in enemies_list:
@@ -183,6 +192,12 @@ def redrawWindow():
     screen.blit(fuel_bar_indicator, (235,500))
     move_draw_bullets()
     bullet_collision()
+    for rect in curr_rects:
+        pygame.draw.rect(screen,(255,0,0),rect,2)
+    for rect in curr_rects_off:
+        pygame.draw.rect(screen,(255,0,0),rect,2)
+    for i in bridge:
+        pygame.draw.rect(screen,(255,0,0),i,2)
     screen.blit(text_image, (20,515))
     text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
     pygame.display.update()
@@ -303,6 +318,13 @@ def bullet_collision():
             if bullet_rect.colliderect(rect) and not removed:
                 bullets.remove(bullet)
                 removed = True
+        for br in bridge:
+            if bullet_rect.colliderect(br) and not removed:
+                tmp = bridges.keys().index(br)
+                checkpoint = bridges.values(tmp)
+                bridge.remove(br)
+                removed = True
+                
                 
 def collision_with_fuel(fuel_list):
     global fuel_x
@@ -319,11 +341,6 @@ def generate_map(start=False):
         return iter(['map/map{}/1.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/3.png'.format(choice)])
 
 
-#generate enemies at start
-enemies_start = generate_enemies(3, False)
-enemies_start_off = generate_enemies(4, True)
-fuel_start = generate_fuel(1,False)
-fuel_start_off = generate_fuel(2, True)
 
 curr_map = generate_map(True)
 aux = next(curr_map)
@@ -335,8 +352,15 @@ for rect in curr_rects_off:
     rect.y -= 480
 off_screen = pygame.image.load(aux2).convert()
 
+bridge = []
 
-speed = 45
+#generate enemies at start
+enemies_start = generate_enemies(3, False) 
+enemies_start_off = generate_enemies(4, True)
+fuel_start = generate_fuel(1,False)
+fuel_start_off = generate_fuel(2, True)
+
+speed = 35 # 40
 
 while True:
     for event in pygame.event.get():
@@ -370,8 +394,6 @@ while True:
     if bY > off_screen.get_height():
         bY = -1*off_screen.get_height()
         start = False
-        enemies_start = generate_enemies(4, True)
-        fuel_start = generate_fuel(2,True)
         MIN_SPEED+=1
         MAX_SPEED+=1
         try:
@@ -388,11 +410,15 @@ while True:
             for rect in curr_rects:
                 rect.y-=480
             on_screen = pygame.image.load(aux).convert()
+        if aux[9] == "3":
+            tmp = pygame.Rect(bridges[aux[7:10]])
+            tmp.y -= 480
+            bridge.append(tmp)
+        enemies_start = generate_enemies(4, True)
+        fuel_start = generate_fuel(2,True)
         
     if bY2 > off_screen.get_height():
         bY2 = -1*off_screen.get_height()
-        enemies_start_off = generate_enemies(4, True)
-        fuel_start_off = generate_fuel(2, True)
         try:
             aux2 = next(curr_map)
             curr_rects_off = [pygame.Rect(i) for i in rects[aux2[7:10]]]
@@ -407,8 +433,12 @@ while True:
             for rect in curr_rects_off:
                 rect.y-=480
             off_screen = pygame.image.load(aux2).convert()
-
-            
+        if aux2[9] == "3":
+            tmp = pygame.Rect(bridges[aux2[7:10]])
+            tmp.y -= 480
+            bridge.append(tmp)
+        enemies_start_off = generate_enemies(4, True)
+        fuel_start_off = generate_fuel(2, True)
         
 
     # collision with enemies check
