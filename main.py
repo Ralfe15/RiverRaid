@@ -50,8 +50,10 @@ fuel = pygame.image.load("images/fuel.png")
 
 bullet = pygame.image.load("images/bullet.png")
 bullets = []
-cooldown = 20
-cooldown_counter = 0
+
+
+bridge_image = pygame.image.load("images/bridge.png")
+
 
 start = True
 
@@ -158,6 +160,10 @@ def check_collision(enemies_list):
         pygame.display.update()
         if player_hitbox.colliderect(enemy_rect):
             return True
+     if len(bridge) != 0:
+        for i in bridge:
+            if player_hitbox.colliderect(i):
+                return True
 
 def check_fuel():
     global fuel_x
@@ -196,8 +202,9 @@ def redrawWindow():
         pygame.draw.rect(screen,(255,0,0),rect,2)
     for rect in curr_rects_off:
         pygame.draw.rect(screen,(255,0,0),rect,2)
-    for i in bridge:
-        pygame.draw.rect(screen,(255,0,0),i,2)
+    if len(bridge) > 0:
+        for i in bridge:
+            screen.blit(bridge_image, i)
     screen.blit(text_image, (20,515))
     text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
     pygame.display.update()
@@ -320,8 +327,8 @@ def bullet_collision():
                 removed = True
         for br in bridge:
             if bullet_rect.colliderect(br) and not removed:
-                tmp = bridges.keys().index(br)
-                checkpoint = bridges.values(tmp)
+                score += 500
+                bullets.remove(bullet)
                 bridge.remove(br)
                 removed = True
                 
@@ -386,6 +393,9 @@ while True:
         if player_hitbox.colliderect(rect):
             pygame.quit()
             quit()
+    if len(bridge) > 0:
+        for i in bridge:
+            i.move_ip(0,scroll_speed)
 
     #move fuel pointer
     fuel_x -= 0.125
