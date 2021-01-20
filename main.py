@@ -4,27 +4,42 @@ from rectangles import getRects, getBridges
 rects = getRects()
 bridges = getBridges()
 
+MAX_SPEED = 6
+MIN_SPEED = 2
+
 pygame.init()
 
 screen_height = 576 #480 w/o bar
 screen_width = 704
 
-MAX_SPEED = 6
-MIN_SPEED = 2
 
 screen = pygame.display.set_mode((screen_width,screen_height))
 clock = pygame.time.Clock()
 
-score = 0
+#sound effects
+pygame.mixer.pre_init(44100, -16, 1, 256)
+fly_normal = pygame.mixer.music.load("sounds/player_flying_normal.wav")
+pygame.mixer.music.set_volume(0.3)
+pygame.mixer.music.play(-1)
+player_shoot = pygame.mixer.Sound("sounds/player_shooting.wav")
+pygame.mixer.Sound.set_volume(player_shoot, 2)
+enemy_explosion = pygame.mixer.Sound("sounds/enemy_destroyed.wav")
+pygame.mixer.Sound.set_volume(enemy_explosion, 2)
+refuel = pygame.mixer.Sound("sounds/player_refueling.wav")
+pygame.mixer.Sound.set_volume(refuel, 2)
+refuel_full = pygame.mixer.Sound("sounds/player_refueling_full.wav")
+pygame.mixer.Sound.set_volume(refuel_full, 2)
 
+
+
+#score display
+score = 0
 myfont = pygame.font.Font("fonts/AtariSmall.ttf", 32)
 text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
 
 #background
 on_screen = pygame.image.load('map/map1/1.png').convert()
 off_screen = pygame.image.load('map/map1/2.png').convert()
-rects_on_screen = []
-rects_off_screen = []
 bY = 0
 bY2 = off_screen.get_height()
 fuel_bar_bg = pygame.image.load('images/bar test.png')
@@ -159,10 +174,12 @@ def check_collision(enemies_list):
         enemy_rect = [enemy[0][0],enemy[0][1]-1,pygame.image.load('images/'+enemy[2]).get_width(),pygame.image.load('images/'+enemy[2]).get_height()+1]
         pygame.display.update()
         if player_hitbox.colliderect(enemy_rect):
+            enemy_explosion.play()
             return True
      if len(bridge) != 0:
         for i in bridge:
             if player_hitbox.colliderect(i):
+                enemy_explosion.play()
                 return True
 
 def check_fuel():
@@ -289,6 +306,7 @@ def bullet_collision():
             if bullet_rect.colliderect(enemy_rect):
                 score += 30
                 bullets.remove(bullet)
+                enemy_explosion.play()
                 removed = True
                 enemies_start.remove(enemy)
         for enemy in enemies_start_off:
@@ -297,6 +315,7 @@ def bullet_collision():
             if bullet_rect.colliderect(enemy_rect) and not removed:
                 score +=30
                 bullets.remove(bullet)
+                enemy_explosion.play()
                 removed = True
                 enemies_start_off.remove(enemy)
         for galoon in fuel_start:
@@ -305,6 +324,7 @@ def bullet_collision():
             if bullet_rect.colliderect(galoon_rect)and not removed:
                 score += 80
                 bullets.remove(bullet)
+                enemy_explosion.play()
                 removed = True
                 fuel_start.remove(galoon)
         for galoon in fuel_start_off:
@@ -313,6 +333,7 @@ def bullet_collision():
             if bullet_rect.colliderect(galoon_rect) and not removed:
                 score += 80
                 bullets.remove(bullet)
+                enemy_explosion.play()
                 removed = True
                 fuel_start_off.remove(galoon)
         for rect in curr_rects:
@@ -330,15 +351,20 @@ def bullet_collision():
                 score += 500
                 bullets.remove(bullet)
                 bridge.remove(br)
+                enemy_explosion.play()
                 removed = True
                 
                 
 def collision_with_fuel(fuel_list):
     global fuel_x
+    i = 0
     for galoon in fuel_list:
             galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
             if player_hitbox.colliderect(galoon_rect) and fuel_x < 437:
                 fuel_x += 0.9
+                refuel.play()
+            elif player_hitbox.colliderect(galoon_rect) and fuel_x >= 437:
+                refuel_full.play()
 
 def generate_map(start=False):
     if start:
@@ -466,6 +492,7 @@ while True:
     if keys[pygame.K_SPACE]:
         if len(bullets) == 0:
             shoot()
+            player_shoot.play()
     if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
         left = False
         right = False
