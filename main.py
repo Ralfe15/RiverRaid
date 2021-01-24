@@ -18,17 +18,27 @@ bridges = getBridges()
 
 # Sound effects
 pygame.mixer.pre_init(44100, -16, 1, 256)
-fly_normal = pygame.mixer.music.load("sounds/player_flying_normal.wav")
-pygame.mixer.music.set_volume(0.3)
-pygame.mixer.music.play(-1)
+fly_normal = pygame.mixer.Sound("sounds/player_flying_normal.wav")
+pygame.mixer.Sound.set_volume(fly_normal, 0.35)
+pygame.mixer.Channel(0).play(fly_normal, loops = -1)
 player_shoot = pygame.mixer.Sound("sounds/player_shooting.wav")
 pygame.mixer.Sound.set_volume(player_shoot, 2)
 enemy_explosion = pygame.mixer.Sound("sounds/enemy_destroyed.wav")
 pygame.mixer.Sound.set_volume(enemy_explosion, 2)
+
 refuel = pygame.mixer.Sound("sounds/player_refueling.wav")
 pygame.mixer.Sound.set_volume(refuel, 2)
+refuel_playing = False
+
 refuel_full = pygame.mixer.Sound("sounds/player_refueling_full.wav")
 pygame.mixer.Sound.set_volume(refuel_full, 2)
+refuel_full_playing = False
+
+fuel_warning = pygame.mixer.Sound("sounds/fuel_alert.wav")
+pygame.mixer.Sound.set_volume(fuel_warning, 0.7)
+warning_playing = False
+
+
 
 # Score/lives display
 score = 0
@@ -253,17 +263,30 @@ def check_fuel():
 
 
                 
-def collision_with_fuel(fuel_list):
+def collision_with_fuel(fuel_list1, fuel_list2):
     global fuel_x
+    global refuel_playing
+    global refuel_full_playing
     i = 0
-    for galoon in fuel_list:
-            galoon_rect = [galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1]
-            if player_hitbox.colliderect(galoon_rect) and fuel_x < 437:
-                fuel_x += 0.9
-                refuel.play()
-            elif player_hitbox.colliderect(galoon_rect) and fuel_x >= 437:
-                refuel_full.play()
-
+    galoon_rect_list1 = [pygame.Rect(galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1) for galoon in fuel_list1]
+    galoon_rect_list2 = [pygame.Rect(galoon[0][0],galoon[0][1]-1,pygame.image.load("images/fuel.png").get_width(),pygame.image.load("images/fuel.png").get_height()+1) for galoon in fuel_list2]
+    if (player_hitbox.collidelist(galoon_rect_list1) != -1 or player_hitbox.collidelist(galoon_rect_list2) != -1) and fuel_x < 437:
+        fuel_x += 0.9
+        if refuel_playing == False:
+            refuel.play(-1)
+            refuel_playing = True
+    elif (player_hitbox.collidelist(galoon_rect_list1) != -1 or player_hitbox.collidelist(galoon_rect_list2) != -1) and fuel_x >= 437:
+        if refuel_full_playing == False:
+            refuel.stop()
+            refuel_full.play(-1)
+            refuel_full_playing = True
+    else:
+        refuel.stop()
+        refuel_full.stop()
+        refuel_playing = False
+        refuel_full_playing = False
+        
+            
             
 
 # ================================================ Bullets functions =================================       
@@ -395,8 +418,14 @@ def reset(start = False):
     global scroll_speed
     global MAX_SPEED
     global MIN_SPEED
+    global bullets
+    global refuel_playing
+    global refuel_full_playing
 
-    
+    refuel.stop()
+    refuel_full.stop()
+    refuel_playing = False
+    refuel_full_playing = False
     intro = True
     introY = -380
     plane_x = 350 - (int(width/2))
@@ -433,7 +462,8 @@ def reset(start = False):
     scroll_speed = 1
     bridge = []
     redrawWindow()
-    fuel_x = 437
+    fuel_x = 437.5
+    bullets = []
     enemies_start = generate_enemies(3, False) 
     enemies_start_off = generate_enemies(4, True)
     fuel_start = generate_fuel(1,False)
@@ -511,7 +541,6 @@ def introduction(start = False):
     lives_text_image = myfont.render("Lives: {}".format(lives), True, (252,252,84))
     pygame.display.update()
     
-
 ### Map properties
 
 curr_map = generate_map(True)
@@ -535,15 +564,28 @@ enemies_start_off = generate_enemies(4, True)
 fuel_start = generate_fuel(1,False)
 fuel_start_off = generate_fuel(2, True)
 
-count_end_game = 0
-
 speed = 35
 
 while True:
     if lives <= 0:
-        pygame.quit()
-        quit()
+        screen.fill((0,0,0))
+        screen.blit(myfont_intro.render("Your score: {}".format(score), True, (252,252,84)),(screen_width/2 - myfont_intro.render("Your score: {}".format(score), True, (252,252,84)).get_width()/2,170))
+        screen.blit(myfont.render("Press SPACEBAR to play again", True, (252,252,84)),(screen_width/2 -myfont.render("Press spacebar to play again", True, (252,252,84)).get_width()/2,300))
+        screen.blit(myfont.render("Press BACKSPACE to quit", True, (252,252,84)),(screen_width/2 - myfont.render("Press BACKSPACE to quit", True, (252,252,84)).get_width()/2,430))
 
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+        pygame.display.update()
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            lives = 3
+            score = 0
+            first_bridge = True
+        elif keys[pygame.K_BACKSPACE]:
+            pygame.quit()
+            quit()
+        continue
     time = pygame.time.get_ticks()
     frame = int((time/speed)%len(choppa_right))
     while intro:
@@ -553,7 +595,6 @@ while True:
                 pygame.quit()
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] and introY == 0:
-            print(plane_x)
             intro = False
             redrawWindow()
     for event in pygame.event.get():
@@ -567,8 +608,8 @@ while True:
     redrawWindow()
     checkScroll()
 
-            
 
+    
     # ======================================== Collisions ==========================================
     if check_collision(enemies_start) or check_collision(enemies_start_off):
         lives-=1
@@ -593,7 +634,6 @@ while True:
         continue
     # =================================== End of collisions ====================================
    
-
     #move background
     bY += scroll_speed
     bY2 += scroll_speed
@@ -604,6 +644,13 @@ while True:
 
     #move fuel pointer
     fuel_x -= 0.125
+
+    if fuel_x <= 300 and warning_playing == False:
+        warning_playing = True
+        pygame.mixer.Channel(1).play(fuel_warning, loops = -1)
+    if fuel_x > 300:
+        warning_playing = False
+        pygame.mixer.Channel(1).pause()
     
     #handle infinite scroll
     if bY > off_screen.get_height():
@@ -656,10 +703,7 @@ while True:
         fuel_start_off = generate_fuel(2, True)
  
     #refuel
-    collision_with_fuel(fuel_start)
-    collision_with_fuel(fuel_start_off)
-    
-    
+    collision_with_fuel(fuel_start, fuel_start_off)
     
     # keys handle
     keys = pygame.key.get_pressed()
@@ -689,6 +733,7 @@ while True:
         up_pressed = False
         down_pressed = False
 
-
-
     clock.tick(speed)
+    
+screen.fill((0,0,0))
+
