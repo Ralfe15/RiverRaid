@@ -2,7 +2,7 @@ import pygame, sys, random, json
 from rectangles import getRects, getBridges
 
 
-#Screen properties
+# Screen properties
 screen_height = 576
 screen_width = 704
 
@@ -30,10 +30,12 @@ pygame.mixer.Sound.set_volume(refuel, 2)
 refuel_full = pygame.mixer.Sound("sounds/player_refueling_full.wav")
 pygame.mixer.Sound.set_volume(refuel_full, 2)
 
-# Score display
+# Score/lives display
 score = 0
 myfont = pygame.font.Font("fonts/AtariSmall.ttf", 32)
 text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
+lives = 3
+lives_text_image = myfont.render("Lives: {}".format(lives), True, (252,252,84))
 
 # Intro text
 myfont_intro = pygame.font.Font("fonts/AtariSmall.ttf", 64)
@@ -95,6 +97,7 @@ height = plane.get_height()
 vel = 4
 left = False
 right = False
+lost_life = False
 
 # Plane position in x axis , starting at the middle of screen
 plane_x = 350 - (int(width/2))
@@ -106,16 +109,12 @@ fuel_x = 437
 # Player hitbox
 player_hitbox = pygame.Rect(plane_x, plane_y, plane.get_width()-2,plane.get_height())
 
-#checkpoint
-checkpoint = ""
-
 ### Camera scrolling
 up_pressed= False
 down_pressed = False
 scroll_speed = 1
 
 ### Functions
-
 ## ======================================================= Enemy functions =======================================================
 
 def generate_enemies(number,off,max_x=405,min_x=145):
@@ -345,7 +344,6 @@ def bullet_collision():
                 bullets.remove(bullet)
                 bridge.remove(br)
                 enemy_explosion.play()
-                checkpoint = checkpoint_aux
                 removed = True
                 
 # ============================================= Scroll ===============================================
@@ -371,6 +369,35 @@ def generate_map(start=False):
         choice = random.choice([2,2]) #add more maps dirs later
         return iter(['map/map{}/1.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/3.png'.format(choice)])
     
+
+def reset(start = False):
+    global fuel_x
+    if start:
+        curr_map = generate_map(True)
+        aux = next(curr_map)
+        curr_rects = [pygame.Rect(i) for i in rects[aux[7:10]]]
+        on_screen = pygame.image.load(aux).convert()
+        aux2 = next(curr_map)
+        curr_rects_off = [pygame.Rect(i) for i in rects[aux2[7:10]]]
+        for rect in curr_rects_off:
+            rect.y -= 480
+        off_screen = pygame.image.load(aux2).convert()
+    else:
+        curr_map = generate_map(False)
+        aux = next(curr_map)
+        curr_rects = [pygame.Rect(i) for i in rects[aux[7:10]]]
+        on_screen = pygame.image.load(aux).convert()
+        aux2 = next(curr_map)
+        curr_rects_off = [pygame.Rect(i) for i in rects[aux2[7:10]]]
+        for rect in curr_rects_off:
+            rect.y -= 480
+        off_screen = pygame.image.load(aux2).convert()
+    redrawWindow()
+    fuel_x = 437
+    enemies_start = generate_enemies(3, False) 
+    enemies_start_off = generate_enemies(4, True)
+    fuel_start = generate_fuel(1,False)
+    fuel_start_off = generate_fuel(2, True)
 # ============================================= Blitting ===============================================
 
 def redrawWindow():
@@ -406,13 +433,22 @@ def redrawWindow():
         for i in bridge:
             screen.blit(bridge_image, i)
     screen.blit(text_image, (20,515))
+    screen.blit(lives_text_image,(560,515))
     text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
     pygame.display.update()
 
-def introduction():
-    screen.blit(intro_background, (0,introY))
-    screen.blit(text_image_intro, (352,288))
-    screen.blit(text_image_intro_sub, (370,288))
+def introduction(start = False):
+    global introY
+    if start:
+        screen.blit(intro_background, (0,introY))    
+        if introY < 0:
+            introY += 2
+        else:
+            screen.blit(text_image_intro, (190,140))
+            screen.blit(text_image_intro_sub, (170,220))
+    else:
+        pass
+    pygame.display.update()
     
 
 ### Map properties
@@ -442,13 +478,7 @@ speed = 35
 while True:
     if start:
         while intro:
-            screen.blit(intro_background, (0,introY))    
-            if introY < 0:
-                introY += 1
-            else:
-                screen.blit(text_image_intro, (190,140))
-                screen.blit(text_image_intro_sub, (170,220))
-            pygame.display.update()
+            introduction(True)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -468,16 +498,7 @@ while True:
     #move background
     bY += scroll_speed
     bY2 += scroll_speed
-    for rect in curr_rects:
-        rect.move_ip(0,scroll_speed)
-        if player_hitbox.colliderect(rect):
-            pygame.quit()
-            quit()
-    for rect in curr_rects_off:
-        rect.move_ip(0,scroll_speed)
-        if player_hitbox.colliderect(rect):
-            pygame.quit()
-            quit()
+    
     if len(bridge) > 0:
         for i in bridge:
             i.move_ip(0,scroll_speed)
@@ -536,16 +557,38 @@ while True:
         fuel_start_off = generate_fuel(2, True)
         
 
-    # collision with enemies check
+    # ======================================== Collisions ==========================================
     if check_collision(enemies_start) or  check_collision(enemies_start_off):
         pygame.quit()
         quit()
+    for rect in curr_rects:
+        rect.move_ip(0,scroll_speed)
+        if player_hitbox.colliderect(rect):
+            pygame.quit()
+            quit()
+    for rect in curr_rects_off:
+        rect.move_ip(0,scroll_speed)
+        if player_hitbox.colliderect(rect):
+            pygame.quit()
+            quit()
     #no fuel check
     if check_fuel():
         pygame.quit()
         quit()
+    # =================================== End of collisions ====================================
+    
+    if lost_life is True:
+        lives -= 1
+        lost_life = False
+    
+    
+    
+    #refuel
     collision_with_fuel(fuel_start)
     collision_with_fuel(fuel_start_off)
+    
+    
+    
     # keys handle
     keys = pygame.key.get_pressed()
     if keys[pygame.K_SPACE]:
@@ -556,12 +599,12 @@ while True:
         left = False
         right = False
     elif keys[pygame.K_LEFT]:
-        plane_x-=vel
+        plane_x -= vel
         player_hitbox.x -= vel
         left = True    
     elif keys[pygame.K_RIGHT]:
-        plane_x+=vel
-        player_hitbox.x +=vel 
+        plane_x += vel
+        player_hitbox.x += vel 
         right = True
     else:
         left = False
