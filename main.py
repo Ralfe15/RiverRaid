@@ -396,7 +396,7 @@ def generate_map(start=False):
         return iter(['map/map{}/1.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/2.png'.format(choice),'map/map{}/3.png'.format(choice)])
     
 
-def reset(start = False):
+def reset(mapa = False):
     global fuel_x
     global first_bridge
     global intro
@@ -421,6 +421,8 @@ def reset(start = False):
     global bullets
     global refuel_playing
     global refuel_full_playing
+    global fuel_start
+    global fuel_start_off
 
     refuel.stop()
     refuel_full.stop()
@@ -429,7 +431,7 @@ def reset(start = False):
     intro = True
     introY = -380
     plane_x = 350 - (int(width/2))
-    if first_bridge:
+    if mapa:
         curr_map = generate_map(True)
         aux = next(curr_map)
         curr_rects = [pygame.Rect(i) for i in rects[aux[7:10]]]
@@ -439,8 +441,6 @@ def reset(start = False):
         for rect in curr_rects_off:
             rect.y -= 480
         off_screen = pygame.image.load(aux2).convert()
-        enemies_start = generate_enemies(3, False) 
-        enemies_start_off = generate_enemies(4, True)
         bY = 0
         bY2 = off_screen.get_height()
     else:
@@ -453,8 +453,7 @@ def reset(start = False):
         for rect in curr_rects_off:
             rect.y -= 480
         off_screen = pygame.image.load(aux2).convert()
-        enemies_start = generate_enemies(3, False) 
-        enemies_start_off = generate_enemies(4, True)
+
         bY = 0
         bY2 = off_screen.get_height()
     MAX_SPEED = 5
@@ -568,7 +567,7 @@ speed = 35
 
 while True:
     if lives <= 0:
-        screen.fill((0,0,0))
+        screen.fill((46,50,184))
         screen.blit(myfont_intro.render("Your score: {}".format(score), True, (252,252,84)),(screen_width/2 - myfont_intro.render("Your score: {}".format(score), True, (252,252,84)).get_width()/2,170))
         screen.blit(myfont.render("Press SPACEBAR to play again", True, (252,252,84)),(screen_width/2 -myfont.render("Press spacebar to play again", True, (252,252,84)).get_width()/2,300))
         screen.blit(myfont.render("Press BACKSPACE to quit", True, (252,252,84)),(screen_width/2 - myfont.render("Press BACKSPACE to quit", True, (252,252,84)).get_width()/2,430))
@@ -596,6 +595,8 @@ while True:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] and introY == 0:
             intro = False
+            if start:
+                player_shoot.play()
             redrawWindow()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -612,25 +613,41 @@ while True:
     
     # ======================================== Collisions ==========================================
     if check_collision(enemies_start) or check_collision(enemies_start_off):
+        enemy_explosion.play()
         lives-=1
-        reset()
+        if lives == 0 or first_bridge:
+            reset(True)
+        else:
+            reset()
         continue
     for rect in curr_rects:
         rect.move_ip(0,scroll_speed)
         if player_hitbox.colliderect(rect):
+            enemy_explosion.play()
             lives-=1
-            reset()
+            if lives == 0 or first_bridge:
+                reset(True)
+            else:
+                reset()
             continue
     for rect in curr_rects_off:
         rect.move_ip(0,scroll_speed)
         if player_hitbox.colliderect(rect):
+            enemy_explosion.play()
             lives-=1
-            reset()
+            if lives == 0 or first_bridge:
+                reset(True)
+            else:
+                reset()
             continue
     #no fuel check
     if check_fuel():
+        enemy_explosion.play()
         lives-=1
-        reset()
+        if lives == 0 or first_bridge:
+            reset(True)
+        else:
+            reset()
         continue
     # =================================== End of collisions ====================================
    
