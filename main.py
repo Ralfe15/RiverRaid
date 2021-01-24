@@ -54,6 +54,7 @@ fuel_bar_indicator = pygame.image.load('images/bar_indicators.png')
 
 intro_background = pygame.image.load('map/intro/intro.png')
 introY = -380
+intro_background2 = pygame.image.load('map/intro/intro_2.png')
 
 # Player images
 plane = pygame.image.load('images/plane-still.png')
@@ -79,14 +80,14 @@ bridge_image = pygame.image.load("images/bridge.png")
 
 ### Variables
 # Scroll speed maximum and minimum speeds
-MAX_SPEED = 6
+MAX_SPEED = 5
 MIN_SPEED = 2
 
 # Bullets initializer
 bullets = []
 
 # Main loop controller
-start = 3
+start = True
 
 # Intro controller
 intro = True
@@ -290,6 +291,7 @@ def move_draw_bullets():
 def bullet_collision():
     # Checks collision with fuel, walls and enemies
     global score
+    global first_bridge
     removed = False
     for bullet in bullets:
         for enemy in enemies_start:
@@ -343,6 +345,7 @@ def bullet_collision():
                 score += 500
                 bullets.remove(bullet)
                 bridge.remove(br)
+                first_bridge = False
                 enemy_explosion.play()
                 removed = True
                 
@@ -372,7 +375,32 @@ def generate_map(start=False):
 
 def reset(start = False):
     global fuel_x
-    if start:
+    global first_bridge
+    global intro
+    global introY
+    global plane_x
+    global curr_map
+    global curr_rects
+    global curr_rects_off
+    global aux
+    global aux2
+    global on_screen
+    global off_screen
+    global bY
+    global bY2
+    global enemies_start
+    global enemies_start_off
+    global player_hitbox
+    global bridge
+    global scroll_speed
+    global MAX_SPEED
+    global MIN_SPEED
+
+    
+    intro = True
+    introY = -380
+    plane_x = 350 - (int(width/2))
+    if first_bridge:
         curr_map = generate_map(True)
         aux = next(curr_map)
         curr_rects = [pygame.Rect(i) for i in rects[aux[7:10]]]
@@ -382,6 +410,10 @@ def reset(start = False):
         for rect in curr_rects_off:
             rect.y -= 480
         off_screen = pygame.image.load(aux2).convert()
+        enemies_start = generate_enemies(3, False) 
+        enemies_start_off = generate_enemies(4, True)
+        bY = 0
+        bY2 = off_screen.get_height()
     else:
         curr_map = generate_map(False)
         aux = next(curr_map)
@@ -392,18 +424,30 @@ def reset(start = False):
         for rect in curr_rects_off:
             rect.y -= 480
         off_screen = pygame.image.load(aux2).convert()
+        enemies_start = generate_enemies(3, False) 
+        enemies_start_off = generate_enemies(4, True)
+        bY = 0
+        bY2 = off_screen.get_height()
+    MAX_SPEED = 5
+    MIN_SPEED = 2
+    scroll_speed = 1
+    bridge = []
     redrawWindow()
     fuel_x = 437
     enemies_start = generate_enemies(3, False) 
     enemies_start_off = generate_enemies(4, True)
     fuel_start = generate_fuel(1,False)
     fuel_start_off = generate_fuel(2, True)
+    player_hitbox = pygame.Rect(plane_x, plane_y, plane.get_width()-2,plane.get_height())
+    
+
 # ============================================= Blitting ===============================================
 
 def redrawWindow():
     # Main blitting function
     global fuel_x
     global text_image
+    global lives_text_image
     screen.blit(on_screen, (0,bY))
     screen.blit(off_screen, (0,bY2))
     if right:
@@ -435,19 +479,36 @@ def redrawWindow():
     screen.blit(text_image, (20,515))
     screen.blit(lives_text_image,(560,515))
     text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
+    lives_text_image = myfont.render("Lives: {}".format(lives), True, (252,252,84))
     pygame.display.update()
 
 def introduction(start = False):
     global introY
+    global text_image
+    global lives_text_image
     if start:
-        screen.blit(intro_background, (0,introY))    
+        screen.blit(intro_background, (0,introY))
         if introY < 0:
             introY += 2
         else:
             screen.blit(text_image_intro, (190,140))
             screen.blit(text_image_intro_sub, (170,220))
     else:
-        pass
+        screen.blit(intro_background2, (0,introY))    
+        if introY < 0:
+            introY += 2
+        else:
+            screen.blit(text_image_intro_sub, (170,220))
+    #gray bar
+    screen.blit(fuel_bar_bg, (0,480))
+    #fuel pointer
+    pygame.draw.rect(screen, (252,252,84),pygame.Rect(fuel_x,504,12,49))
+    #fuel ammount indicators
+    screen.blit(fuel_bar_indicator, (235,500))
+    screen.blit(text_image, (20,515))
+    screen.blit(lives_text_image,(560,515))
+    text_image = myfont.render("Score: {}".format(score), True, (252,252,84))
+    lives_text_image = myfont.render("Lives: {}".format(lives), True, (252,252,84))
     pygame.display.update()
     
 
@@ -462,6 +523,7 @@ curr_rects_off = [pygame.Rect(i) for i in rects[aux2[7:10]]]
 for rect in curr_rects_off:
     rect.y -= 480
 off_screen = pygame.image.load(aux2).convert()
+first_bridge = True
 
 
 ### Init bridges list
@@ -473,18 +535,27 @@ enemies_start_off = generate_enemies(4, True)
 fuel_start = generate_fuel(1,False)
 fuel_start_off = generate_fuel(2, True)
 
+count_end_game = 0
+
 speed = 35
 
 while True:
-    if start:
-        while intro:
-            introduction(True)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_SPACE]:
-                intro = False
+    if lives <= 0:
+        pygame.quit()
+        quit()
+
+    time = pygame.time.get_ticks()
+    frame = int((time/speed)%len(choppa_right))
+    while intro:
+        introduction(first_bridge)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE] and introY == 0:
+            print(plane_x)
+            intro = False
+            redrawWindow()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -492,8 +563,36 @@ while True:
     time = pygame.time.get_ticks()
     frame = int((time/speed)%len(choppa_right))
 
+    
     redrawWindow()
     checkScroll()
+
+            
+
+    # ======================================== Collisions ==========================================
+    if check_collision(enemies_start) or check_collision(enemies_start_off):
+        lives-=1
+        reset()
+        continue
+    for rect in curr_rects:
+        rect.move_ip(0,scroll_speed)
+        if player_hitbox.colliderect(rect):
+            lives-=1
+            reset()
+            continue
+    for rect in curr_rects_off:
+        rect.move_ip(0,scroll_speed)
+        if player_hitbox.colliderect(rect):
+            lives-=1
+            reset()
+            continue
+    #no fuel check
+    if check_fuel():
+        lives-=1
+        reset()
+        continue
+    # =================================== End of collisions ====================================
+   
 
     #move background
     bY += scroll_speed
@@ -555,34 +654,7 @@ while True:
             bridge.append(tmp)
         enemies_start_off = generate_enemies(4, True)
         fuel_start_off = generate_fuel(2, True)
-        
-
-    # ======================================== Collisions ==========================================
-    if check_collision(enemies_start) or  check_collision(enemies_start_off):
-        pygame.quit()
-        quit()
-    for rect in curr_rects:
-        rect.move_ip(0,scroll_speed)
-        if player_hitbox.colliderect(rect):
-            pygame.quit()
-            quit()
-    for rect in curr_rects_off:
-        rect.move_ip(0,scroll_speed)
-        if player_hitbox.colliderect(rect):
-            pygame.quit()
-            quit()
-    #no fuel check
-    if check_fuel():
-        pygame.quit()
-        quit()
-    # =================================== End of collisions ====================================
-    
-    if lost_life is True:
-        lives -= 1
-        lost_life = False
-    
-    
-    
+ 
     #refuel
     collision_with_fuel(fuel_start)
     collision_with_fuel(fuel_start_off)
